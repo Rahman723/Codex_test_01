@@ -12,6 +12,7 @@ const supportMessage = document.querySelector('#support-message');
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition;
 let microphoneStream;
+let finalTranscript = '';
 let isRecording = false;
 
 if (SpeechRecognition) {
@@ -22,23 +23,37 @@ if (SpeechRecognition) {
   supportMessage.textContent = 'Voice recording is available. Click Start recording and allow microphone access.';
 
   recognition.addEventListener('result', (event) => {
-    const transcript = Array.from(event.results)
-      .slice(event.resultIndex)
-      .map((result) => result[0].transcript)
-      .join(' ');
+    let interimTranscript = '';
 
-    notesInput.value = `${notesInput.value.trim()} ${transcript}`.trim();
+    for (let index = event.resultIndex; index < event.results.length; index += 1) {
+      const transcript = event.results[index][0].transcript.trim();
+
+      if (event.results[index].isFinal) {
+        finalTranscript = appendTranscript(finalTranscript, transcript);
+      } else {
+        interimTranscript = appendTranscript(interimTranscript, transcript);
+      }
+    }
+
+    notesInput.value = appendTranscript(finalTranscript, interimTranscript);
+  });
+
+  recognition.addEventListener('error', (event) => {
+    isRecording = false;
+    stopMicrophoneStream();
+    resetRecordButton();
+    supportMessage.textContent = getRecordingErrorMessage(event.error || event);
   });
 
   recognition.addEventListener('end', () => {
     isRecording = false;
     stopMicrophoneStream();
-    recordButton.textContent = 'Start recording';
-    recordButton.classList.remove('recording');
+    resetRecordButton();
+    finalTranscript = notesInput.value.trim();
     supportMessage.textContent = 'Recording stopped. Review the transcript or build your list.';
   });
 } else {
-  supportMessage.textContent = 'Speech recognition is not supported here. You can still type or paste notes.';
+  supportMessage.textContent = 'Speech recognition is not supported in this browser. Type or paste notes to build your list.';
   recordButton.disabled = true;
 }
 
@@ -57,6 +72,7 @@ recordButton.addEventListener('click', async () => {
 async function startRecording() {
   recordButton.disabled = true;
   supportMessage.textContent = 'Requesting microphone access…';
+  finalTranscript = notesInput.value.trim();
 
   try {
     await requestMicrophoneAccess();
@@ -66,7 +82,9 @@ async function startRecording() {
     recordButton.classList.add('recording');
     supportMessage.textContent = 'Listening… speak your tasks, then click Stop recording.';
   } catch (error) {
+    isRecording = false;
     stopMicrophoneStream();
+    resetRecordButton();
     supportMessage.textContent = getRecordingErrorMessage(error);
   } finally {
     recordButton.disabled = false;
@@ -86,16 +104,36 @@ function stopMicrophoneStream() {
   microphoneStream = undefined;
 }
 
+function resetRecordButton() {
+  recordButton.textContent = 'Start recording';
+  recordButton.classList.remove('recording');
+}
+
+function appendTranscript(current, next) {
+  return [current, next].map((part) => part.trim()).filter(Boolean).join(' ');
+}
+
 function getRecordingErrorMessage(error) {
-  if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+  const errorName = typeof error === 'string' ? error : error.name;
+  const errorMessage = typeof error === 'string' ? error : error.message;
+
+  if (errorName === 'not-allowed' || errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError') {
     return 'Microphone access was blocked. Allow microphone permissions in your browser, then try again.';
   }
 
-  if (error.message === 'missing-media-devices') {
+  if (errorName === 'no-speech') {
+    return 'No speech was detected. Try again and speak clearly after the browser starts listening.';
+  }
+
+  if (errorName === 'audio-capture') {
+    return 'No microphone was found. Connect or enable a microphone, then try again.';
+  }
+
+  if (errorMessage === 'missing-media-devices') {
     return 'This browser cannot request microphone access. Try a current Chrome or Edge browser.';
   }
 
-  if (error.name === 'InvalidStateError') {
+  if (errorName === 'InvalidStateError') {
     return 'Recording is already starting. Please wait a moment and try again.';
   }
 
@@ -104,6 +142,7 @@ function getRecordingErrorMessage(error) {
 
 clearButton.addEventListener('click', () => {
   notesInput.value = '';
+  finalTranscript = '';
   renderTasks([]);
 });
 
