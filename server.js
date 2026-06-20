@@ -23,5 +23,5 @@ createServer(async (request, response) => {
     response.end('Not found');
   }
 }).listen(PORT, () => {
-  console.log(`Prompt Priority Planner running at http://localhost:${PORT}`);
+  console.log(`Voice Priority Planner running at http://localhost:${PORT}`);
 });

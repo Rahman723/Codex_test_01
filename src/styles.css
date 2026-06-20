@@ -57,7 +57,7 @@ h1 {
   padding: 28px;
 }
 
-.prompt-panel, .results-panel {
+.recorder-panel, .results-panel {
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -91,6 +91,7 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   box-shadow: 0 12px 28px rgba(79, 70, 229, 0.25);
 }
 
+.primary-button.recording { background: linear-gradient(135deg, #e11d48, #f97316); }
 
 .secondary-button {
   color: #30415f;
@@ -98,18 +99,6 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 }
 
 .wide-button { width: 100%; }
-
-.example-prompts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.example-button {
-  background: #eef3ff;
-  color: #4169e1;
-  padding: 10px 14px;
-}
 
 .input-label {
   font-weight: 800;

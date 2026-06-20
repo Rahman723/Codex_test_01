@@ -1,14 +1,13 @@
-# Prompt Priority Planner
+# Voice Priority Planner
 
-A simple browser app that turns a text prompt or daily brain dump into a prioritized to-do list.
+A simple browser app that captures daily voice notes and turns them into a prioritized to-do list.
 
 ## Features
 
-- Type or paste a daily prompt with everything you need to accomplish.
-- Use example prompts to see the planner work immediately.
+- Record notes with the browser Speech Recognition API when supported.
+- Type or paste notes as a fallback in any browser.
 - Extract action items from a natural-language daily brain dump.
 - Rank tasks by urgency, impact, and quick-win language.
-- Run entirely in the browser with no external API dependency.
 
 ## Getting started
 

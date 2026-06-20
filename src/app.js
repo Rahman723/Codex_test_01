@@ -1,5 +1,6 @@
 import { extractTasks } from './taskPrioritizer.js';
 
+const recordButton = document.querySelector('#record-button');
 const clearButton = document.querySelector('#clear-button');
 const prioritizeButton = document.querySelector('#prioritize-button');
 const notesInput = document.querySelector('#notes-input');
@@ -7,39 +8,59 @@ const taskList = document.querySelector('#task-list');
 const taskCount = document.querySelector('#task-count');
 const emptyState = document.querySelector('#empty-state');
 const supportMessage = document.querySelector('#support-message');
-const exampleButtons = document.querySelectorAll('.example-button');
 
-exampleButtons.forEach((button) => {
-  button.addEventListener('click', () => {
-    notesInput.value = button.dataset.example;
-    notesInput.focus();
-    buildPrioritizedList();
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition;
+let isRecording = false;
+
+if (SpeechRecognition) {
+  recognition = new SpeechRecognition();
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.lang = 'en-US';
+  supportMessage.textContent = 'Voice recording is available in this browser.';
+
+  recognition.addEventListener('result', (event) => {
+    const transcript = Array.from(event.results)
+      .slice(event.resultIndex)
+      .map((result) => result[0].transcript)
+      .join(' ');
+
+    notesInput.value = `${notesInput.value.trim()} ${transcript}`.trim();
   });
+
+  recognition.addEventListener('end', () => {
+    isRecording = false;
+    recordButton.textContent = 'Start recording';
+    recordButton.classList.remove('recording');
+  });
+} else {
+  supportMessage.textContent = 'Speech recognition is not supported here. You can still type or paste notes.';
+  recordButton.disabled = true;
+}
+
+recordButton.addEventListener('click', () => {
+  if (!recognition) return;
+
+  if (isRecording) {
+    recognition.stop();
+    return;
+  }
+
+  recognition.start();
+  isRecording = true;
+  recordButton.textContent = 'Stop recording';
+  recordButton.classList.add('recording');
 });
 
 clearButton.addEventListener('click', () => {
   notesInput.value = '';
-  supportMessage.textContent = 'Prompt cleared. Add a new brain dump when you are ready.';
   renderTasks([]);
-  notesInput.focus();
 });
 
-prioritizeButton.addEventListener('click', buildPrioritizedList);
-
-notesInput.addEventListener('keydown', (event) => {
-  if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
-    buildPrioritizedList();
-  }
+prioritizeButton.addEventListener('click', () => {
+  renderTasks(extractTasks(notesInput.value));
 });
-
-function buildPrioritizedList() {
-  const tasks = extractTasks(notesInput.value);
-  renderTasks(tasks);
-
-  supportMessage.textContent = tasks.length > 0
-    ? `Built a prioritized list with ${tasks.length} ${tasks.length === 1 ? 'task' : 'tasks'}.`
-    : 'Add a little more detail to your prompt so the planner can find tasks.';
-}
 
 function renderTasks(tasks) {
   taskList.innerHTML = '';
