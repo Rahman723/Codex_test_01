@@ -11,8 +11,6 @@ const supportMessage = document.querySelector('#support-message');
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition;
-let microphoneStream;
-let finalTranscript = '';
 let isRecording = false;
 
 if (SpeechRecognition) {
@@ -20,129 +18,43 @@ if (SpeechRecognition) {
   recognition.continuous = true;
   recognition.interimResults = true;
   recognition.lang = 'en-US';
-  supportMessage.textContent = 'Voice recording is available. Click Start recording and allow microphone access.';
+  supportMessage.textContent = 'Voice recording is available in this browser.';
 
   recognition.addEventListener('result', (event) => {
-    let interimTranscript = '';
+    const transcript = Array.from(event.results)
+      .slice(event.resultIndex)
+      .map((result) => result[0].transcript)
+      .join(' ');
 
-    for (let index = event.resultIndex; index < event.results.length; index += 1) {
-      const transcript = event.results[index][0].transcript.trim();
-
-      if (event.results[index].isFinal) {
-        finalTranscript = appendTranscript(finalTranscript, transcript);
-      } else {
-        interimTranscript = appendTranscript(interimTranscript, transcript);
-      }
-    }
-
-    notesInput.value = appendTranscript(finalTranscript, interimTranscript);
-  });
-
-  recognition.addEventListener('error', (event) => {
-    isRecording = false;
-    stopMicrophoneStream();
-    resetRecordButton();
-    supportMessage.textContent = getRecordingErrorMessage(event.error || event);
+    notesInput.value = `${notesInput.value.trim()} ${transcript}`.trim();
   });
 
   recognition.addEventListener('end', () => {
     isRecording = false;
-    stopMicrophoneStream();
-    resetRecordButton();
-    finalTranscript = notesInput.value.trim();
-    supportMessage.textContent = 'Recording stopped. Review the transcript or build your list.';
+    recordButton.textContent = 'Start recording';
+    recordButton.classList.remove('recording');
   });
 } else {
-  supportMessage.textContent = 'Speech recognition is not supported in this browser. Type or paste notes to build your list.';
+  supportMessage.textContent = 'Speech recognition is not supported here. You can still type or paste notes.';
   recordButton.disabled = true;
 }
 
-recordButton.addEventListener('click', async () => {
+recordButton.addEventListener('click', () => {
   if (!recognition) return;
 
   if (isRecording) {
     recognition.stop();
-    stopMicrophoneStream();
     return;
   }
 
-  await startRecording();
+  recognition.start();
+  isRecording = true;
+  recordButton.textContent = 'Stop recording';
+  recordButton.classList.add('recording');
 });
-
-async function startRecording() {
-  recordButton.disabled = true;
-  supportMessage.textContent = 'Requesting microphone access…';
-  finalTranscript = notesInput.value.trim();
-
-  try {
-    await requestMicrophoneAccess();
-    recognition.start();
-    isRecording = true;
-    recordButton.textContent = 'Stop recording';
-    recordButton.classList.add('recording');
-    supportMessage.textContent = 'Listening… speak your tasks, then click Stop recording.';
-  } catch (error) {
-    isRecording = false;
-    stopMicrophoneStream();
-    resetRecordButton();
-    supportMessage.textContent = getRecordingErrorMessage(error);
-  } finally {
-    recordButton.disabled = false;
-  }
-}
-
-async function requestMicrophoneAccess() {
-  if (!navigator.mediaDevices?.getUserMedia) {
-    throw new Error('missing-media-devices');
-  }
-
-  microphoneStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-}
-
-function stopMicrophoneStream() {
-  microphoneStream?.getTracks().forEach((track) => track.stop());
-  microphoneStream = undefined;
-}
-
-function resetRecordButton() {
-  recordButton.textContent = 'Start recording';
-  recordButton.classList.remove('recording');
-}
-
-function appendTranscript(current, next) {
-  return [current, next].map((part) => part.trim()).filter(Boolean).join(' ');
-}
-
-function getRecordingErrorMessage(error) {
-  const errorName = typeof error === 'string' ? error : error.name;
-  const errorMessage = typeof error === 'string' ? error : error.message;
-
-  if (errorName === 'not-allowed' || errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError') {
-    return 'Microphone access was blocked. Allow microphone permissions in your browser, then try again.';
-  }
-
-  if (errorName === 'no-speech') {
-    return 'No speech was detected. Try again and speak clearly after the browser starts listening.';
-  }
-
-  if (errorName === 'audio-capture') {
-    return 'No microphone was found. Connect or enable a microphone, then try again.';
-  }
-
-  if (errorMessage === 'missing-media-devices') {
-    return 'This browser cannot request microphone access. Try a current Chrome or Edge browser.';
-  }
-
-  if (errorName === 'InvalidStateError') {
-    return 'Recording is already starting. Please wait a moment and try again.';
-  }
-
-  return 'Could not start recording. Check your microphone permissions and try again.';
-}
 
 clearButton.addEventListener('click', () => {
   notesInput.value = '';
-  finalTranscript = '';
   renderTasks([]);
 });
 
