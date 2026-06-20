@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Voice Priority Planner</title>
+    <link rel="stylesheet" href="src/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="hero" aria-labelledby="app-title">
+        <p class="eyebrow">Daily voice notes → prioritized action</p>
+        <h1 id="app-title">Voice Priority Planner</h1>
+        <p class="hero-copy">
+          Record or type your daily brain dump. The app extracts likely tasks,
+          scores them by urgency and impact, then gives you a focused to-do list.
+        </p>
+      </section>
+
+      <section class="panel recorder-panel" aria-labelledby="recorder-title">
+        <div>
+          <h2 id="recorder-title">Capture today's notes</h2>
+          <p id="support-message" class="support-message" role="status"></p>
+        </div>
+
+        <div class="controls" aria-label="Voice recording controls">
+          <button id="record-button" class="primary-button" type="button">Start recording</button>
+          <button id="clear-button" class="secondary-button" type="button">Clear notes</button>
+        </div>
+
+        <label for="notes-input" class="input-label">Voice note transcript</label>
+        <textarea
+          id="notes-input"
+          rows="9"
+          placeholder="Example: I need to submit the client proposal by 2pm, buy groceries, call Mom, and prepare tomorrow's standup notes."
+        ></textarea>
+
+        <button id="prioritize-button" class="wide-button" type="button">Build prioritized to-do list</button>
+      </section>
+
+      <section class="panel results-panel" aria-labelledby="tasks-title">
+        <div class="results-header">
+          <div>
+            <h2 id="tasks-title">Prioritized tasks</h2>
+            <p class="muted">Highest priority tasks appear first.</p>
+          </div>
+          <span id="task-count" class="task-count">0 tasks</span>
+        </div>
+        <ol id="task-list" class="task-list" aria-live="polite"></ol>
+        <p id="empty-state" class="empty-state">Add a note, then build your list.</p>
+      </section>
+    </main>
+
+    <script type="module" src="src/app.js"></script>
+  </body>
+</html>

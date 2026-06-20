@@ -1,0 +1,11 @@
+{
+  "name": "voice-priority-todos",
+  "version": "1.0.0",
+  "description": "A simple browser app for recording voice notes and turning them into prioritized daily tasks.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  }
+}
